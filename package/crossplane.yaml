@@ -1,0 +1,2916 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-cloudflare
+spec:
+  crossplane:
+    version: ">=v1.0.0"
+  controller:
+    image: gcr.io/ironcore-dev-1/provider-cloudflare-controller:placeholder
+    # permissionRequests:
+    # - apiGroups:
+    #   - apiextensions.crossplane.io
+    #   resources:
+    #   - compositions
+    #   verbs:
+    #   - get
+    #   - list
+    #   - create
+    #   - update
+    #   - patch
+    #   - watch
+    # - apiGroups:
+    #   - cloudflare.crossplane.io
+    #   resources:
+    #   - providerconfigs
+    #   - providerconfigusages
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+    # - apiGroups:
+    #   - dns.cloudflare.crossplane.io
+    #   resources:
+    #   - records
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+    # - apiGroups:
+    #   - firewall.cloudflare.crossplane.io
+    #   resources:
+    #   - filters
+    #   - rules
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+    # - apiGroups:
+    #   - spectrum.cloudflare.crossplane.io
+    #   resources:
+    #   - applications
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+    # - apiGroups:
+    #   - sslsaas.cloudflare.crossplane.io
+    #   resources:
+    #   - customhostnames
+    #   - fallbackorigins
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+    # - apiGroups:
+    #   - workers.cloudflare.crossplane.io
+    #   resources:
+    #   - routes
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+    # - apiGroups:
+    #   - zone.cloudflare.crossplane.io
+    #   resources:
+    #   - zones
+    #   verbs:
+    #   - get
+    #   - list
+    #   - watch
+    #   - create
+    #   - update
+    #   - patch
+    #   - delete
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: records.dns.cloudflare.crossplane.io
+spec:
+  group: dns.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: Record
+    listKind: RecordList
+    plural: records
+    singular: record
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .status.atProvider.fqdn
+      name: FQDN
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Record represents a single DNS Record managed on a Zone.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A RecordSpec defines the desired state of a DNS Record.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: RecordParameters are the configurable fields of a DNS
+                  Record.
+                properties:
+                  content:
+                    description: Content of the DNS Record
+                    type: string
+                  name:
+                    description: Name of the DNS Record.
+                    maxLength: 255
+                    type: string
+                  priority:
+                    description: Priority of a record.
+                    format: int32
+                    maximum: 65535
+                    minimum: 0
+                    type: integer
+                  proxied:
+                    description: Proxied enables or disables proxying traffic via
+                      Cloudflare.
+                    type: boolean
+                  ttl:
+                    default: 1
+                    description: TTL of the DNS Record.
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  type:
+                    default: A
+                    description: Type is the type of DNS Record.
+                    enum:
+                    - A
+                    - AAAA
+                    - CAA
+                    - CNAME
+                    - TXT
+                    - SRV
+                    - LOC
+                    - MX
+                    - NS
+                    - SPF
+                    - CERT
+                    - DNSKEY
+                    - DS
+                    - NAPTR
+                    - SMIMEA
+                    - SSHFP
+                    - TLSA
+                    - URI
+                    type: string
+                  zone:
+                    description: ZoneID this DNS Record is managed on.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the Zone object this DNS Record
+                      is managed on.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the Zone object this DNS Record
+                      is managed on.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                required:
+                - content
+                - name
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A RecordStatus represents the observed state of a DNS Record.
+            properties:
+              atProvider:
+                description: RecordObservation is the observable fields of a DNS Record.
+                properties:
+                  createdOn:
+                    description: CreatedOn indicates when this record was created
+                      on Cloudflare.
+                    format: date-time
+                    type: string
+                  fqdn:
+                    description: FQDN contains the full FQDN of the created record
+                      (Record Name + Zone).
+                    type: string
+                  locked:
+                    description: Locked indicates if this record is locked or not.
+                    type: boolean
+                  modifiedOn:
+                    description: ModifiedOn indicates when this record was modified
+                      on Cloudflare.
+                    format: date-time
+                    type: string
+                  proxiable:
+                    description: Proxiable indicates whether this record _can be_
+                      proxied via Cloudflare.
+                    type: boolean
+                  zone:
+                    description: Zone contains the name of the Zone this record is
+                      managed on.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: filters.firewall.cloudflare.crossplane.io
+spec:
+  group: firewall.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: Filter
+    listKind: FilterList
+    plural: filters
+    singular: filter
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Filter is a matching expression that can be referenced by one
+          or more firewall rules.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A FilterSpec defines the desired state of a Filter.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: FilterParameters are the configurable fields of a Filter.
+                properties:
+                  description:
+                    description: Description is a human readable description of this
+                      rule.
+                    maxLength: 500
+                    type: string
+                  expression:
+                    description: Expression is the filter expression used to match
+                      traffic.
+                    type: string
+                  paused:
+                    description: Paused indicates if this rule is paused or not.
+                    type: boolean
+                  zone:
+                    description: ZoneID this Firewall Rule is for.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the zone object this Firewall
+                      Rule is for.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the zone object this Firewall
+                      Rule is for.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                required:
+                - expression
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A FilterStatus represents the observed state of a Filter.
+            properties:
+              atProvider:
+                description: FilterObservation is the observable fields of a Filter.
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: zones.zone.cloudflare.crossplane.io
+spec:
+  group: zone.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: Zone
+    listKind: ZoneList
+    plural: zones
+    singular: zone
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .status.atProvider.status
+      name: STATE
+      type: string
+    - jsonPath: .status.atProvider.accountId
+      name: ACCOUNT
+      type: string
+    - jsonPath: .status.atProvider.plan
+      name: PLAN
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Zone is a set of common settings applied to one or more domains.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A ZoneSpec defines the desired state of a Zone.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: ZoneParameters are the configurable fields of a Zone.
+                properties:
+                  accountId:
+                    description: AccountID is the account ID under which this Zone
+                      will be created.
+                    type: string
+                  jumpStart:
+                    default: false
+                    description: 'JumpStart enables attempting to import existing
+                      DNS records when a new Zone is created. WARNING: JumpStart causes
+                      Cloudflare to automatically create DNS records without the involvement
+                      of Crossplane. This means you will have no Record instances
+                      representing records created in this manner, and you will have
+                      to import them manually if you want to manage them with Crossplane.'
+                    type: boolean
+                  name:
+                    description: Name is the name of the Zone, which should be a valid
+                      domain.
+                    format: hostname
+                    maxLength: 253
+                    type: string
+                  paused:
+                    description: Paused indicates if the zone is only using Cloudflare
+                      DNS services.
+                    type: boolean
+                  planId:
+                    description: PlanID indicates the plan that this Zone will be
+                      subscribed to.
+                    type: string
+                  settings:
+                    description: Settings contains a Zone settings that can be applied
+                      to this zone.
+                    properties:
+                      advancedDdos:
+                        description: AdvancedDDOS enables or disables Advanced DDoS
+                          mitigation
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      alwaysOnline:
+                        description: AlwaysOnline enables or disables Always Online
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      alwaysUseHttps:
+                        description: AlwaysUseHTTPS enables or disables Always use
+                          HTTPS
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      automaticHttpsRewrites:
+                        description: AutomaticHTTPSRewrites enables or disables Automatic
+                          HTTPS Rewrites
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      brotli:
+                        description: Brotli enables or disables Brotli
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      browserCacheTtl:
+                        description: BrowserCacheTTL configures the browser cache
+                          ttl. 0 means respect existing headers
+                        enum:
+                        - 0
+                        - 30
+                        - 60
+                        - 300
+                        - 1200
+                        - 1800
+                        - 3600
+                        - 7200
+                        - 10800
+                        - 14400
+                        - 18000
+                        - 28800
+                        - 43200
+                        - 57600
+                        - 72000
+                        - 86400
+                        - 172800
+                        - 259200
+                        - 345600
+                        - 432000
+                        - 691200
+                        - 1382400
+                        - 2073600
+                        - 2678400
+                        - 5356800
+                        - 16070400
+                        - 31536000
+                        format: int64
+                        type: integer
+                      browserCheck:
+                        description: BrowserCheck enables or disables Browser check
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      cacheLevel:
+                        description: CacheLevel configures the cache level
+                        enum:
+                        - bypass
+                        - basic
+                        - simplified
+                        - aggressive
+                        - cache_everything
+                        type: string
+                      challengeTtl:
+                        description: ChallengeTTL configures the edge cache ttl
+                        enum:
+                        - 300
+                        - 900
+                        - 1800
+                        - 2700
+                        - 3600
+                        - 7200
+                        - 10800
+                        - 14400
+                        - 28800
+                        - 57600
+                        - 86400
+                        - 604800
+                        - 2592000
+                        - 31536000
+                        format: int64
+                        type: integer
+                      ciphers:
+                        description: Ciphers configures which ciphers are allowed
+                          for TLS termination
+                        items:
+                          type: string
+                        type: array
+                      cnameFlattening:
+                        description: CnameFlattening configures CNAME flattening
+                        enum:
+                        - flatten_at_root
+                        - flatten_all
+                        - flatten_none
+                        type: string
+                      developmentMode:
+                        description: DevelopmentMode enables or disables Development
+                          mode
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      edgeCacheTtl:
+                        description: EdgeCacheTTL configures the edge cache ttl
+                        format: int64
+                        type: integer
+                      emailObfuscation:
+                        description: EmailObfuscation enables or disables Email obfuscation
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      hotlinkProtection:
+                        description: HotlinkProtection enables or disables Hotlink
+                          protection
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      http2:
+                        description: HTTP2 enables or disables HTTP2
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      http3:
+                        description: HTTP3 enables or disables HTTP3
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      ipGeolocation:
+                        description: IPGeolocation enables or disables IP Geolocation
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      ipv6:
+                        description: IPv6 enables or disables IPv6
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      logToCloudflare:
+                        description: LogToCloudflare enables or disables Logging to
+                          cloudflare
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      maxUpload:
+                        description: MaxUpload configures the maximum upload payload
+                          size
+                        format: int64
+                        type: integer
+                      minTLSVersion:
+                        description: MinTLSVersion configures the minimum TLS version
+                        enum:
+                        - "1.0"
+                        - "1.1"
+                        - "1.2"
+                        - "1.3"
+                        type: string
+                      minify:
+                        description: Minify configures minify settings for certain
+                          assets
+                        properties:
+                          css:
+                            description: CSS enables or disables minifying CSS assets
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                          html:
+                            description: HTML enables or disables minifying HTML assets
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                          js:
+                            description: JS enables or disables minifying JS assets
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                        type: object
+                      mirage:
+                        description: Mirage enables or disables Mirage
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      mobileRedirect:
+                        description: MobileRedirect configures automatic redirections
+                          to mobile-optimized subdomains
+                        properties:
+                          status:
+                            description: Status enables or disables mobile redirection
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                          stripURI:
+                            description: StripURI defines whether or not to strip
+                              the path from the URI when redirecting
+                            type: boolean
+                          subdomain:
+                            description: Subdomain defines the subdomain prefix to
+                              redirect mobile devices to
+                            type: string
+                        type: object
+                      opportunisticEncryption:
+                        description: OpportunisticEncryption enables or disables Opportunistic
+                          encryption
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      opportunisticOnion:
+                        description: OpportunisticOnion enables or disables Opportunistic
+                          onion
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      orangeToOrange:
+                        description: OrangeToOrange enables or disables Orange to
+                          orange
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      originErrorPagePassThru:
+                        description: OriginErrorPagePassThru enables or disables Mirage
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      polish:
+                        description: Polish configures the Polish setting
+                        enum:
+                        - "off"
+                        - lossless
+                        - lossy
+                        type: string
+                      prefetchPreload:
+                        description: PrefetchPreload enables or disables Prefetch
+                          preload
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      privacyPass:
+                        description: PrivacyPass enables or disables Privacy pass
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      pseudoIpv4:
+                        description: PseudoIPv4 configures the Pseudo IPv4 setting
+                        enum:
+                        - "off"
+                        - add_header
+                        - overwrite_header
+                        type: string
+                      responseBuffering:
+                        description: ResponseBuffering enables or disables Response
+                          buffering
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      rocketLoader:
+                        description: RocketLoader enables or disables Rocket loader
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      securityHeader:
+                        description: SecurityHeader defines the security headers for
+                          a Zone
+                        properties:
+                          strictTransportSecurity:
+                            description: StrictTransportSecurity defines the STS settings
+                              on a Zone
+                            properties:
+                              enabled:
+                                description: Enabled enables or disables STS settings
+                                type: boolean
+                              includeSubdomains:
+                                description: IncludeSubdomains defines whether or
+                                  not to include all subdomains
+                                type: boolean
+                              maxAge:
+                                description: MaxAge defines the maximum age in seconds
+                                  of the STS
+                                format: int64
+                                type: integer
+                              noSniff:
+                                description: 'NoSniff defines whether or not to include
+                                  ''X-Content-Type-Options: nosniff'' header'
+                                type: boolean
+                            type: object
+                        type: object
+                      securityLevel:
+                        description: SecurityLevel configures the Security level
+                        enum:
+                        - "off"
+                        - essentially_off
+                        - low
+                        - medium
+                        - high
+                        - under_attack
+                        type: string
+                      serverSideExclude:
+                        description: ServerSideExclude enables or disables Server
+                          side exclude
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      sortQueryStringForCache:
+                        description: SortQueryStringForCache enables or disables Sort
+                          query string for cache
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      ssl:
+                        description: SSL configures the SSL mode
+                        enum:
+                        - "off"
+                        - flexible
+                        - full
+                        - strict
+                        - origin_pull
+                        type: string
+                      tls13:
+                        description: TLS13 configures TLS 1.3
+                        enum:
+                        - "off"
+                        - "on"
+                        - zrt
+                        type: string
+                      tlsClientAuth:
+                        description: TLSClientAuth enables or disables TLS client
+                          authentication
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      trueClientIPHeader:
+                        description: TrueClientIPHeader enables or disables True client
+                          IP Header
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      visitorIP:
+                        description: VisitorIP enables or disables Visitor IP
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      waf:
+                        description: WAF enables or disables the Web application firewall
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      webP:
+                        description: WebP enables or disables WebP
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      webSockets:
+                        description: WebSockets enables or disables Web sockets
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                      zeroRtt:
+                        description: ZeroRTT enables or disables Zero RTT
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
+                    type: object
+                  type:
+                    default: full
+                    description: Type indicates the type of this zone - partial (partner-hosted
+                      or CNAME only) or full.
+                    enum:
+                    - full
+                    - partial
+                    type: string
+                  vanityNameServers:
+                    description: VanityNameServers lists an array of domains to use
+                      for custom nameservers.
+                    items:
+                      type: string
+                    type: array
+                required:
+                - name
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A ZoneStatus represents the observed state of a Zone.
+            properties:
+              atProvider:
+                description: ZoneObservation are the observable fields of a Zone.
+                properties:
+                  accountId:
+                    description: AccountID is the account ID that this zone exists
+                      under
+                    type: string
+                  accountName:
+                    description: AccountName is the account name that this zone exists
+                      under
+                    type: string
+                  betas:
+                    description: Betas indicates the betas available on this Zone.
+                    items:
+                      type: string
+                    type: array
+                  deactivationReason:
+                    description: DeactReason indicates the deactivation reason on
+                      this Zone.
+                    type: string
+                  devModeTimer:
+                    description: DevModeTimer indicates the number of seconds left
+                      in dev mode (if positive), otherwise the number of seconds since
+                      dev mode expired.
+                    type: integer
+                  nameServers:
+                    description: NameServers lists the Name servers that are assigned
+                      to this Zone.
+                    items:
+                      type: string
+                    type: array
+                  originalDNSHost:
+                    description: OriginalDNSHost indicates the original DNS host when
+                      this Zone was created.
+                    type: string
+                  originalNameServers:
+                    description: OriginalNS lists the original nameservers when this
+                      Zone was created.
+                    items:
+                      type: string
+                    type: array
+                  originalRegistrar:
+                    description: OriginalRegistrar indicates the original registrar
+                      when this Zone was created.
+                    type: string
+                  plan:
+                    description: Plan indicates the name of the plan assigned to this
+                      Zone.
+                    type: string
+                  planId:
+                    description: PlanID indicates the billing plan ID assigned to
+                      this Zone.
+                    type: string
+                  planPending:
+                    description: PlanPending indicates the name of the pending plan
+                      assigned to this Zone.
+                    type: string
+                  planPendingId:
+                    description: PlanPendingID indicates the ID of the pending plan
+                      assigned to this Zone.
+                    type: string
+                  status:
+                    description: Status indicates the status of this Zone.
+                    type: string
+                  vanityNameServers:
+                    description: VanityNameServers lists the currently assigned vanity
+                      name server addresses.
+                    items:
+                      type: string
+                    type: array
+                  verificationKey:
+                    description: VerificationKey indicates the Verification key set
+                      on this Zone.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: rules.firewall.cloudflare.crossplane.io
+spec:
+  group: firewall.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: Rule
+    listKind: RuleList
+    plural: rules
+    singular: rule
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Rule applies a firewall filter in a particular order to a Zone.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A RuleSpec defines the desired state of a Rule.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: RuleParameters are the configurable fields of a Rule.
+                properties:
+                  action:
+                    description: Action is the action to apply to a matching request.
+                    enum:
+                    - block
+                    - challenge
+                    - js_challenge
+                    - allow
+                    - log
+                    - bypass
+                    type: string
+                  bypassProducts:
+                    description: BypassProducts lists the products by identifier that
+                      should be bypassed when the bypass action is used.
+                    items:
+                      description: RuleBypassProduct identifies a product that will
+                        be bypassed when the bypass action is used.
+                      enum:
+                      - zoneLockdown
+                      - uaBlock
+                      - bic
+                      - hot
+                      - securityLevel
+                      - rateLimit
+                      - waf
+                      type: string
+                    type: array
+                  description:
+                    description: Description is a human readable description of this
+                      rule.
+                    maxLength: 500
+                    type: string
+                  filter:
+                    description: Filter refers to a Filter ID that this rule uses
+                      to match traffic.
+                    type: string
+                  filterRef:
+                    description: FilterRef references the filter object this rule
+                      uses to match traffic.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  filterSelector:
+                    description: FilterSelector selects the filter object this rule
+                      uses to match traffic.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                  paused:
+                    description: Paused indicates if this rule is paused or not.
+                    type: boolean
+                  priority:
+                    description: Priority is the priority of this Firewall Rule, that
+                      controls processing order. Rules without a priority set will
+                      be sequenced after rules with a priority set.
+                    format: int32
+                    maximum: 2147483647
+                    minimum: 1
+                    type: integer
+                  zone:
+                    description: ZoneID this Firewall Rule is for.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the zone object this Firewall
+                      Rule is for.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the zone object this Firewall
+                      Rule is for.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                required:
+                - action
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A RuleStatus represents the observed state of a Rule.
+            properties:
+              atProvider:
+                description: RuleObservation is the observable fields of a Rule.
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: customhostnames.sslsaas.cloudflare.crossplane.io
+spec:
+  group: sslsaas.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: CustomHostname
+    listKind: CustomHostnameList
+    plural: customhostnames
+    singular: customhostname
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .spec.forProvider.hostname
+      name: HOSTNAME
+      type: string
+    - jsonPath: .spec.forProvider.customOriginServer
+      name: CUSTOM ORIGIN
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A CustomHostname is a custom hostname required to use SSL for
+          SaaS.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A CustomHostnameSpec defines the desired state of a custom
+              hostname.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: CustomHostnameParameters represents the settings of a
+                  CustomHostname
+                properties:
+                  customOriginServer:
+                    description: CustomOriginServer for a Custom Hostname A valid
+                      hostname that’s been added to your DNS zone as an A, AAAA, or
+                      CNAME record.
+                    type: string
+                  customOriginServerRef:
+                    description: CustomOriginServerRef references the Record object
+                      that this Custom Hostname should point to.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  customOriginServerSelector:
+                    description: CustomOriginServerSelector selects the Record object
+                      that this Custom Hostname should point to.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                  hostname:
+                    description: Hostname for the custom hostname.
+                    format: hostname
+                    maxLength: 255
+                    type: string
+                  ssl:
+                    description: SSL Settings for a Custom Hostname
+                    properties:
+                      customCertificate:
+                        description: Custom Certificate used for this Custom Hostname
+                          If provided then Cloudflare will not attempt to generate
+                          an ACME certificate
+                        type: string
+                      customKey:
+                        description: Custom Certificate Key used for this Custom Hostname
+                          If provided then Cloudflare will not attempt to generate
+                          an ACME certificate
+                        type: string
+                      method:
+                        default: http
+                        description: Domain control validation (DCV) method used for
+                          this custom hostname.
+                        enum:
+                        - http
+                        - txt
+                        - email
+                        type: string
+                      settings:
+                        description: CustomHostnameSSLSettings represents the SSL
+                          settings for a custom hostname.
+                        properties:
+                          ciphers:
+                            description: An allowlist of ciphers for TLS termination.
+                              These ciphers must be in the BoringSSL format.
+                            items:
+                              type: string
+                            type: array
+                          http2:
+                            default: "on"
+                            description: Whether or not HTTP2 is enabled for the Custom
+                              Hostname
+                            enum:
+                            - "on"
+                            - "off"
+                            type: string
+                          minTLSVersion:
+                            default: "1.2"
+                            description: The minimum TLS version supported for the
+                              Custom Hostname
+                            enum:
+                            - "1.0"
+                            - "1.1"
+                            - "1.2"
+                            - "1.3"
+                            type: string
+                          tls13:
+                            default: "on"
+                            description: Whether or not TLS 1.3 is enabled for the
+                              Custom Hostname
+                            enum:
+                            - "on"
+                            - "off"
+                            type: string
+                        type: object
+                      type:
+                        default: dv
+                        description: Level of validation to be used for this custom
+                          hostname. Domain validation (dv) must be used.
+                        enum:
+                        - dv
+                        type: string
+                      wildcard:
+                        description: Indicates whether the certificate for the custom
+                          hostname covers a wildcard.
+                        type: boolean
+                    type: object
+                  zone:
+                    description: ZoneID this custom hostname is for.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the zone object this custom hostname
+                      is for.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the zone object this custom
+                      hostname is for.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                required:
+                - hostname
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A CustomHostnameStatus represents the observed state of a
+              custom hostname.
+            properties:
+              atProvider:
+                description: CustomHostnameObservation are the observable fields of
+                  a custom hostname.
+                properties:
+                  ownershipVerification:
+                    description: CustomHostnameOwnershipVerification represents ownership
+                      verification status of a given custom hostname.
+                    properties:
+                      dnsRecord:
+                        description: DNSRecord represents ownership verification status
+                          using a DNS record on the domain in question.
+                        properties:
+                          name:
+                            description: Name is the name of the DNS record that must
+                              be created to verify this Hostname.
+                            type: string
+                          type:
+                            description: Type is the type of the DNS record that must
+                              be created to verify ownership of this hostname.
+                            type: string
+                          value:
+                            description: Value is the value of the DNS record that
+                              must be created to verify ownership of this hostname.
+                            type: string
+                        type: object
+                      httpFile:
+                        description: HTTPFile represents ownership verification status
+                          using a file accessed over HTTP.
+                        properties:
+                          body:
+                            description: Body is the contents of the above file that
+                              must be readable to verify ownership of this hostname.
+                            type: string
+                          url:
+                            description: URL is the location where a file must be
+                              made available to verify ownership of this hostname.
+                            type: string
+                        type: object
+                    type: object
+                  ssl:
+                    description: CustomHostnameSSLObserved represents the Observed
+                      SSL section in a given custom hostname.
+                    properties:
+                      certificateAuthority:
+                        type: string
+                      cname:
+                        type: string
+                      cnameTarget:
+                        type: string
+                      httpBody:
+                        type: string
+                      httpURL:
+                        type: string
+                      status:
+                        type: string
+                      validationErrors:
+                        items:
+                          description: CustomHostnameSSLValidationErrors represents
+                            errors that occurred during SSL validation.
+                          properties:
+                            message:
+                              type: string
+                          type: object
+                        type: array
+                    required:
+                    - certificateAuthority
+                    - cname
+                    - cnameTarget
+                    - httpBody
+                    - httpURL
+                    - status
+                    type: object
+                  status:
+                    description: CustomHostnameStatus is the enumeration of valid
+                      state values in the CustomHostnameSSL
+                    type: string
+                  verificationErrors:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - status
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: routes.workers.cloudflare.crossplane.io
+spec:
+  group: workers.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: Route
+    listKind: RouteList
+    plural: routes
+    singular: route
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .spec.forProvider.pattern
+      name: PATTERN
+      type: string
+    - jsonPath: .spec.forProvider.script
+      name: SCRIPT
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Route represents a single Worker Route managed on a Zone.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A RouteSpec defines the desired state of a Worker Route.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: RouteParameters are the configurable fields of a DNS
+                  Route.
+                properties:
+                  pattern:
+                    description: Pattern is the URL pattern of the route.
+                    type: string
+                  script:
+                    description: Script is the name of the worker script.
+                    type: string
+                  zone:
+                    description: ZoneID this Worker Route is managed on.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the Zone object this Worker Route
+                      is managed on.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the Zone object this Worker
+                      Route is managed on.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                required:
+                - pattern
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A RouteStatus represents the observed state of a Worker Route.
+            properties:
+              atProvider:
+                description: RouteObservation is the observable fields of a Worker
+                  Route.
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: providerconfigusages.cloudflare.crossplane.io
+spec:
+  group: cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - provider
+    - cloudflare
+    kind: ProviderConfigUsage
+    listKind: ProviderConfigUsageList
+    plural: providerconfigusages
+    singular: providerconfigusage
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    - jsonPath: .providerConfigRef.name
+      name: CONFIG-NAME
+      type: string
+    - jsonPath: .resourceRef.kind
+      name: RESOURCE-KIND
+      type: string
+    - jsonPath: .resourceRef.name
+      name: RESOURCE-NAME
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A ProviderConfigUsage indicates that a resource is using a ProviderConfig.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          providerConfigRef:
+            description: ProviderConfigReference to the provider config being used.
+            properties:
+              name:
+                description: Name of the referenced object.
+                type: string
+            required:
+            - name
+            type: object
+          resourceRef:
+            description: ResourceReference to the managed resource using the provider
+              config.
+            properties:
+              apiVersion:
+                description: APIVersion of the referenced object.
+                type: string
+              kind:
+                description: Kind of the referenced object.
+                type: string
+              name:
+                description: Name of the referenced object.
+                type: string
+              uid:
+                description: UID of the referenced object.
+                type: string
+            required:
+            - apiVersion
+            - kind
+            - name
+            type: object
+        required:
+        - providerConfigRef
+        - resourceRef
+        type: object
+    served: true
+    storage: true
+    subresources: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: providerconfigs.cloudflare.crossplane.io
+spec:
+  group: cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - provider
+    - cloudflare
+    kind: ProviderConfig
+    listKind: ProviderConfigList
+    plural: providerconfigs
+    singular: providerconfig
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    - jsonPath: .spec.credentials.secretRef.name
+      name: SECRET-NAME
+      priority: 1
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A ProviderConfig configures a Template provider.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A ProviderConfigSpec defines the desired state of a ProviderConfig.
+            properties:
+              credentials:
+                description: Credentials required to authenticate to this provider.
+                properties:
+                  env:
+                    description: Env is a reference to an environment variable that
+                      contains credentials that must be used to connect to the provider.
+                    properties:
+                      name:
+                        description: Name is the name of an environment variable.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  fs:
+                    description: Fs is a reference to a filesystem location that contains
+                      credentials that must be used to connect to the provider.
+                    properties:
+                      path:
+                        description: Path is a filesystem path.
+                        type: string
+                    required:
+                    - path
+                    type: object
+                  secretRef:
+                    description: A SecretRef is a reference to a secret key that contains
+                      the credentials that must be used to connect to the provider.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
+                  source:
+                    description: Source of the provider credentials.
+                    enum:
+                    - None
+                    - Secret
+                    - InjectedIdentity
+                    - Environment
+                    - Filesystem
+                    type: string
+                required:
+                - source
+                type: object
+            required:
+            - credentials
+            type: object
+          status:
+            description: A ProviderConfigStatus reflects the observed state of a ProviderConfig.
+            properties:
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              users:
+                description: Users of this provider configuration.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: fallbackorigins.sslsaas.cloudflare.crossplane.io
+spec:
+  group: sslsaas.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: FallbackOrigin
+    listKind: FallbackOriginList
+    plural: fallbackorigins
+    singular: fallbackorigin
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A FallbackOrigin is a fallback origin required to use SSL for
+          SaaS.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A FallbackOriginSpec defines the desired state of a Fallback
+              Origin.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: FallbackOriginParameters represents the settings of a
+                  FallbackOrigin
+                properties:
+                  origin:
+                    description: Origin for the Fallback Origin.
+                    format: hostname
+                    maxLength: 255
+                    type: string
+                  originRef:
+                    description: OriginRef references the Record object this Fallback
+                      Origin should point to.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  originSelector:
+                    description: OriginSelector selects the Record object this Fallback
+                      Origin should point to.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                  zone:
+                    description: ZoneID this Fallback Origin is for.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the zone object this Fallback
+                      Origin is for.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the zone object this Fallback
+                      Origin is for.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A FallbackOriginStatus represents the observed state of a
+              Fallback Origin.
+            properties:
+              atProvider:
+                description: FallbackOriginObservation are the observable fields of
+                  a Fallback Origin.
+                properties:
+                  errors:
+                    description: Errors if there any of the fallback origin
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    description: Status of the fallback origin and if its completed
+                      deployment
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: applications.spectrum.cloudflare.crossplane.io
+spec:
+  group: spectrum.cloudflare.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
+    kind: Application
+    listKind: ApplicationList
+    plural: applications
+    singular: application
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Application is a set of common settings applied to one or more
+          domains.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A ApplicationSpec defines the desired state of a Spectrum
+              Application.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: ApplicationParameters are the configurable fields of
+                  a Spectrum Application.
+                properties:
+                  argoSmartRouting:
+                    description: ArgoSmartRouting enables Argo Smart Routing for this
+                      application.
+                    type: boolean
+                  dns:
+                    description: The name and type of DNS record for the Spectrum
+                      application.
+                    properties:
+                      name:
+                        description: Name is the name of the DNS record associated
+                          with the application.
+                        format: hostname
+                        type: string
+                      type:
+                        description: Type is the type of edge IP configuration specified
+                          Only valid with CNAME DNS names
+                        enum:
+                        - CNAME
+                        - ADDRESS
+                        type: string
+                    required:
+                    - name
+                    - type
+                    type: object
+                  edgeIPs:
+                    description: EdgeIPs is the anycast edge IP configuration for
+                      the hostname of this application.
+                    properties:
+                      connectivity:
+                        description: Connectivity is IP versions supported for inbound
+                          connections on Spectrum anycast IPs.
+                        enum:
+                        - all
+                        - ipv4
+                        - ipv6
+                        type: string
+                      ips:
+                        description: IPs is a slice of customer owned IPs we broadcast
+                          via anycast for this hostname and application.
+                        items:
+                          type: string
+                        type: array
+                      type:
+                        description: Type is the type of edge IP configuration specified.
+                        enum:
+                        - dynamic
+                        - static
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  ipFirewall:
+                    description: IPFirewall enables IP Access Rules for this application.
+                    type: boolean
+                  originDNS:
+                    description: OriginDNS is the DNS entry when using DNS Origins
+                    properties:
+                      name:
+                        description: Name is the name of the Origin DNS for the Spectrum
+                          Application
+                        format: hostname
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  originDirect:
+                    description: OriginDirect is a list of destination addresses to
+                      the origin.
+                    items:
+                      type: string
+                    type: array
+                  originPort:
+                    description: OriginPort is the port range when using Origin DNS
+                    properties:
+                      end:
+                        description: End is the end of a port range for a Spectrum
+                          Application
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      port:
+                        description: Port is a singular port for a Spectrum Application
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      start:
+                        description: Start is the start of a port range for a Spectrum
+                          Application
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                    type: object
+                  protocol:
+                    description: Protocol port configuration at Cloudflare’s edge.
+                    type: string
+                  proxyProtocol:
+                    description: ProxyProtocol enables / sets the Proxy Protocol to
+                      the origin.
+                    enum:
+                    - "off"
+                    - v1
+                    - v2
+                    - simple
+                    type: string
+                  tls:
+                    description: TLS is the type of TLS termination associated with
+                      the application.
+                    enum:
+                    - "off"
+                    - flexible
+                    - full
+                    - strict
+                    type: string
+                  trafficType:
+                    description: TrafficType determines how data travels from the
+                      edge to the origin.
+                    enum:
+                    - direct
+                    - http
+                    - https
+                    type: string
+                  zone:
+                    description: ZoneID this Spectrum Application is managed on.
+                    type: string
+                  zoneRef:
+                    description: ZoneRef references the Zone object this Spectrum
+                      Application is managed on.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  zoneSelector:
+                    description: ZoneSelector selects the Zone object this Spectrum
+                      Application is managed on.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                required:
+                - protocol
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A ApplicationStatus represents the observed state of a Spectrum
+              Application.
+            properties:
+              atProvider:
+                description: ApplicationObservation are the observable fields of a
+                  Spectrum Application.
+                properties:
+                  createdOn:
+                    format: date-time
+                    type: string
+                  modifiedOn:
+                    format: date-time
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
