@@ -16,7 +16,7 @@ COPY ./ ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o provider cmd/provider/main.go
 
 # This container collects the shared libs we'll need in the final container.
-FROM alpine:3.17 as libs
+FROM alpine:3.18 as libs
 # Bootstrap apk in /newroot from /.
 RUN mkdir -p /newroot/etc/apk
 RUN cp -r /etc/apk/repositories /etc/apk/keys /newroot/etc/apk/
